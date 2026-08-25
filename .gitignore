@@ -5,15 +5,23 @@ node_modules/
 # Build outputs
 dist/
 build/
-.next/
-.nuxt/
-public/dist/
-release/
+target/
 
-# TypeScript/JavaScript
-*.tsbuildinfo
-*.js.map
-*.ts.map
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+.ENV
+.python-version
+.pytest_cache/
+.mypy_cache/
+.coverage
+coverage/
 
 # Logs
 *.log
@@ -22,18 +30,25 @@ release/
 .env
 .env.local
 .env.*
+.env.local.*
 
-# IDE files
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
 
-# OS files
+# OS
 .DS_Store
 Thumbs.db
 
-# Coverage
-coverage/
-.nyc_output/
+# Archives
+*.zip
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.gz
+*.rar
+*.7z
 ```

@@ -1,5 +1,6 @@
 // Design Tokens for Web Print Project
 // Based on sections/design specification
+// Single source of truth for design tokens
 
 export const tokens = {
   colors: {
@@ -82,3 +83,4 @@ export type TokenTypography = typeof tokens.typography;
 export type TokenSpacing = typeof tokens.spacing;
 export type TokenRadius = typeof tokens.radius;
 export type TokenShadow = typeof tokens.shadow;
+
