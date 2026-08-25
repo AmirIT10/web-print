@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { tokens } from '@/types/tokens';
 import { CategoryCardData, ProductCardData, CTA, NavItem } from '@/types';
 import { Header } from './Header';
 import { HeroSection } from './HeroSection';

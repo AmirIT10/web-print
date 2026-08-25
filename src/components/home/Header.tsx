@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { tokens } from '@/types/tokens';
-import { CTA, NavItem } from '@/types';
+import { NavItem } from '@/types';
 
 interface HeaderProps {
   logo: string;
@@ -12,9 +12,56 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ logo, navItems, ctaLabel }) => {
   const [menuOpen, setMenuOpen] = React.useState(false);
+  const menuButtonRef = React.useRef<HTMLButtonElement>(null);
+  const menuRef = React.useRef<HTMLDivElement>(null);
+
+  // Close menu on Escape key
+  React.useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && menuOpen) {
+        setMenuOpen(false);
+        menuButtonRef.current?.focus();
+      }
+    };
+
+    if (menuOpen) {
+      document.body.style.overflow = 'hidden';
+      window.addEventListener('keydown', handleEscape);
+      // Focus first focusable element in menu
+      setTimeout(() => {
+        const firstFocusable = menuRef.current?.querySelector('a, button') as HTMLElement;
+        firstFocusable?.focus();
+      }, 100);
+    } else {
+      document.body.style.overflow = '';
+    }
+
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', handleEscape);
+    };
+  }, [menuOpen]);
+
+  // Handle click outside to close menu
+  React.useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuOpen && menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+
+    if (menuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [menuOpen]);
 
   return (
     <header
+      className="header"
       style={{
         position: 'sticky',
         top: 0,
@@ -26,6 +73,7 @@ export const Header: React.FC<HeaderProps> = ({ logo, navItems, ctaLabel }) => {
       }}
     >
       <div
+        className="header-container"
         style={{
           maxWidth: tokens.spacing.pageMaxWidth,
           margin: '0 auto',
@@ -37,7 +85,7 @@ export const Header: React.FC<HeaderProps> = ({ logo, navItems, ctaLabel }) => {
         }}
       >
         {/* Logo */}
-        <a href="/" style={{ display: 'flex', alignItems: 'center' }}>
+        <a href="/" className="logo-link" style={{ display: 'flex', alignItems: 'center' }}>
           <img
             src={logo}
             alt="لوگو"
@@ -47,16 +95,17 @@ export const Header: React.FC<HeaderProps> = ({ logo, navItems, ctaLabel }) => {
 
         {/* Desktop Navigation */}
         <nav
+          className="desktop-nav"
           style={{
             display: 'flex',
             gap: tokens.spacing.componentGapLg,
           }}
-          className="desktop-nav"
         >
           {navItems.map((item) => (
             <a
               key={item.href}
               href={item.href}
+              className="nav-link"
               style={{
                 fontFamily: tokens.typography.fontFamily,
                 fontSize: tokens.typography.body.fontSize,
@@ -64,12 +113,6 @@ export const Header: React.FC<HeaderProps> = ({ logo, navItems, ctaLabel }) => {
                 textDecoration: 'none',
                 transition: `color ${tokens.transitions.default}`,
               }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.color = tokens.colors.primary[500])
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.color = tokens.colors.text[700])
-              }
             >
               {item.label}
             </a>
@@ -80,6 +123,7 @@ export const Header: React.FC<HeaderProps> = ({ logo, navItems, ctaLabel }) => {
         {ctaLabel && (
           <a
             href="/products"
+            className="header-cta"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -98,19 +142,6 @@ export const Header: React.FC<HeaderProps> = ({ logo, navItems, ctaLabel }) => {
               minHeight: tokens.spacing.touchTarget,
               minWidth: tokens.spacing.touchTarget,
             }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.backgroundColor = tokens.colors.primary[700])
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.backgroundColor = tokens.colors.primary[500])
-            }
-            onFocus={(e) => {
-              e.currentTarget.style.outline = `2px solid ${tokens.colors.primary[500]}`;
-              e.currentTarget.style.outlineOffset = '2px';
-            }}
-            onBlur={(e) => {
-              e.currentTarget.style.outline = 'none';
-            }}
           >
             {ctaLabel}
           </a>
@@ -118,6 +149,7 @@ export const Header: React.FC<HeaderProps> = ({ logo, navItems, ctaLabel }) => {
 
         {/* Mobile Menu Trigger */}
         <button
+          ref={menuButtonRef}
           onClick={() => setMenuOpen(true)}
           className="mobile-menu-trigger"
           style={{
@@ -130,6 +162,8 @@ export const Header: React.FC<HeaderProps> = ({ logo, navItems, ctaLabel }) => {
             minWidth: tokens.spacing.touchTarget,
           }}
           aria-label="منو"
+          aria-expanded={menuOpen}
+          aria-controls="mobile-menu"
         >
           <svg
             width="24"
@@ -149,6 +183,7 @@ export const Header: React.FC<HeaderProps> = ({ logo, navItems, ctaLabel }) => {
       {/* Mobile Menu */}
       {menuOpen && (
         <div
+          className="mobile-menu-backdrop"
           style={{
             position: 'fixed',
             inset: 0,
@@ -158,6 +193,9 @@ export const Header: React.FC<HeaderProps> = ({ logo, navItems, ctaLabel }) => {
           onClick={() => setMenuOpen(false)}
         >
           <div
+            ref={menuRef}
+            id="mobile-menu"
+            className="mobile-menu"
             style={{
               position: 'absolute',
               left: 0,
@@ -170,8 +208,11 @@ export const Header: React.FC<HeaderProps> = ({ logo, navItems, ctaLabel }) => {
               overflowY: 'auto',
             }}
             onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="منوی موبایل"
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px', alignItems: 'center' }}>
               <img src={logo} alt="لوگو" style={{ height: '32px' }} />
               <button
                 onClick={() => setMenuOpen(false)}
@@ -198,11 +239,12 @@ export const Header: React.FC<HeaderProps> = ({ logo, navItems, ctaLabel }) => {
                 </svg>
               </button>
             </div>
-            <nav style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <nav className="mobile-nav" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {navItems.map((item) => (
                 <a
                   key={item.href}
                   href={item.href}
+                  className="mobile-nav-link"
                   style={{
                     fontFamily: tokens.typography.fontFamily,
                     fontSize: tokens.typography.bodyLg.fontSize,
@@ -216,36 +258,37 @@ export const Header: React.FC<HeaderProps> = ({ logo, navItems, ctaLabel }) => {
                   {item.label}
                 </a>
               ))}
-              {ctaLabel && (
-                <a
-                  href="/products"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    height: tokens.spacing.buttonHeightMobile,
-                    marginTop: '16px',
-                    borderRadius: tokens.radius.button,
-                    backgroundColor: tokens.colors.primary[500],
-                    color: tokens.colors.surface,
-                    fontFamily: tokens.typography.fontFamily,
-                    fontSize: tokens.typography.button.fontSize,
-                    fontWeight: tokens.typography.button.fontWeight,
-                    textDecoration: 'none',
-                  }}
-                  onClick={() => setMenuOpen(false)}
-                >
-                  {ctaLabel}
-                </a>
-              )}
             </nav>
+            {ctaLabel && (
+              <a
+                href="/products"
+                className="mobile-cta"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  height: tokens.spacing.buttonHeightMobile,
+                  marginTop: '24px',
+                  borderRadius: tokens.radius.button,
+                  backgroundColor: tokens.colors.primary[500],
+                  color: tokens.colors.surface,
+                  fontFamily: tokens.typography.fontFamily,
+                  fontSize: tokens.typography.button.fontSize,
+                  fontWeight: tokens.typography.button.fontWeight,
+                  textDecoration: 'none',
+                }}
+                onClick={() => setMenuOpen(false)}
+              >
+                {ctaLabel}
+              </a>
+            )}
           </div>
         </div>
       )}
 
       <style jsx>{`
         @media (max-width: ${tokens.breakpoints.tablet}) {
-          header {
+          .header {
             height: 68px !important;
           }
           .desktop-nav {
@@ -254,13 +297,34 @@ export const Header: React.FC<HeaderProps> = ({ logo, navItems, ctaLabel }) => {
           .mobile-menu-trigger {
             display: block !important;
           }
+          .header-cta {
+            display: none !important;
+          }
         }
         @media (max-width: ${tokens.breakpoints.mobile}) {
-          header {
+          .header {
             height: 64px !important;
           }
+        }
+        
+        .nav-link:hover,
+        .nav-link:focus {
+          color: ${tokens.colors.primary[500]};
+        }
+        
+        .header-cta:hover {
+          background-color: ${tokens.colors.primary[700]};
+        }
+        
+        .header-cta:focus,
+        .mobile-cta:focus,
+        .mobile-menu-trigger:focus {
+          outline: 2px solid ${tokens.colors.primary[500]};
+          outline-offset: 2px;
         }
       `}</style>
     </header>
   );
 };
+
+export default Header;
