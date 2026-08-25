@@ -1,0 +1,8 @@
+Figma: Not created yet.
+
+Authoritative design source for the current implementation phase:
+- /sections/home/README.md
+- /sections/product-detail/README.md
+- /sections/design/tokens.json
+
+When a Figma file is created, replace this file content with its URL and version/date.
