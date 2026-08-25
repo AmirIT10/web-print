@@ -16,11 +16,25 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
   const [selectedIndex, setSelectedIndex] = React.useState(0);
   const [imageLoaded, setImageLoaded] = React.useState(false);
   const [imageError, setImageError] = React.useState(false);
+  const [lightboxOpen, setLightboxOpen] = React.useState(false);
 
   const hasMultipleImages = images.length > 1;
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!hasMultipleImages) return;
+    if (!hasMultipleImages && !lightboxOpen) return;
+    
+    if (lightboxOpen) {
+      if (e.key === 'Escape') {
+        setLightboxOpen(false);
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        setSelectedIndex((prev) => (prev + 1) % images.length);
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        setSelectedIndex((prev) => (prev - 1 + images.length) % images.length);
+      }
+      return;
+    }
     
     if (e.key === 'ArrowLeft') {
       e.preventDefault();
@@ -29,6 +43,32 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
       e.preventDefault();
       setSelectedIndex((prev) => (prev - 1 + images.length) % images.length);
     }
+  };
+
+  // Touch/swipe handling for mobile
+  const touchStartX = React.useRef<number | null>(null);
+  
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStartX.current || !hasMultipleImages) return;
+    
+    const touchEndX = e.changedTouches[0].clientX;
+    const diff = touchStartX.current - touchEndX;
+    
+    if (Math.abs(diff) > 50) { // Minimum swipe distance
+      if (diff > 0) {
+        // Swipe left - next image
+        setSelectedIndex((prev) => (prev + 1) % images.length);
+      } else {
+        // Swipe right - previous image
+        setSelectedIndex((prev) => (prev - 1 + images.length) % images.length);
+      }
+    }
+    
+    touchStartX.current = null;
   };
 
   if (images.length === 0) {
@@ -133,6 +173,9 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
             setImageLoaded(false);
             setImageError(true);
           }}
+          onClick={() => setLightboxOpen(true)}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
           style={{
             position: 'absolute',
             inset: 0,
@@ -141,9 +184,155 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
             objectFit: 'cover',
             opacity: imageLoaded ? 1 : 0,
             transition: `opacity ${tokens.transitions.default}`,
+            cursor: hasMultipleImages ? 'pointer' : 'default',
           }}
         />
       </div>
+
+      {/* Lightbox Modal */}
+      {lightboxOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0,0,0,0.9)',
+            zIndex: 2000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          onClick={() => setLightboxOpen(false)}
+          onKeyDown={handleKeyDown}
+          tabIndex={-1}
+          role="dialog"
+          aria-modal="true"
+          aria-label="نمایش بزرگ تصویر"
+        >
+          <button
+            onClick={() => setLightboxOpen(false)}
+            style={{
+              position: 'absolute',
+              top: '20px',
+              right: '20px',
+              background: 'none',
+              border: 'none',
+              color: tokens.colors.surface,
+              cursor: 'pointer',
+              padding: '12px',
+              minHeight: tokens.spacing.touchTarget,
+              minWidth: tokens.spacing.touchTarget,
+              zIndex: 2001,
+            }}
+            aria-label="بستن نمایش بزرگ"
+          >
+            <svg
+              width="32"
+              height="32"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+          
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedIndex((prev) => (prev - 1 + images.length) % images.length);
+            }}
+            style={{
+              position: 'absolute',
+              left: '20px',
+              background: 'none',
+              border: 'none',
+              color: tokens.colors.surface,
+              cursor: 'pointer',
+              padding: '16px',
+              minHeight: tokens.spacing.touchTarget,
+              minWidth: tokens.spacing.touchTarget,
+              opacity: 0.8,
+            }}
+            aria-label="تصویر قبلی"
+          >
+            <svg
+              width="40"
+              height="40"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </button>
+          
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedIndex((prev) => (prev + 1) % images.length);
+            }}
+            style={{
+              position: 'absolute',
+              right: '20px',
+              background: 'none',
+              border: 'none',
+              color: tokens.colors.surface,
+              cursor: 'pointer',
+              padding: '16px',
+              minHeight: tokens.spacing.touchTarget,
+              minWidth: tokens.spacing.touchTarget,
+              opacity: 0.8,
+            }}
+            aria-label="تصویر بعدی"
+          >
+            <svg
+              width="40"
+              height="40"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M9 18l6-6-6-6" />
+            </svg>
+          </button>
+          
+          <div
+            style={{
+              maxWidth: '90vw',
+              maxHeight: '90vh',
+              position: 'relative',
+            }}
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
+            <img
+              src={currentImage.url}
+              alt={currentImage.alt || productName}
+              style={{
+                maxWidth: '90vw',
+                maxHeight: '90vh',
+                objectFit: 'contain',
+              }}
+            />
+            <p
+              style={{
+                textAlign: 'center',
+                color: tokens.colors.surface,
+                fontFamily: tokens.typography.fontFamily,
+                fontSize: tokens.typography.caption.fontSize,
+                marginTop: '12px',
+              }}
+            >
+              تصویر {selectedIndex + 1} از {images.length}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Thumbnails */}
       {hasMultipleImages && (
